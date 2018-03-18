@@ -158,5 +158,6 @@ s.eval('1 & 0 ')
 s.eval('5 > 3')
 // -> return '1'
 
-s.eval('x + 2 = 4')
+s.eval('solve(x + 2 = 4, x)')
 // -> return 'x: 2'
+

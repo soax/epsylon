@@ -9,6 +9,11 @@
         }
     }
 
+   // string -> tree -> expr
+   
+   
+   
+   
     class tree {
 
         compile(scope: scope) : expression{
