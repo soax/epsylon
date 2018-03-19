@@ -1,4 +1,4 @@
 import {parser} from './parser'
 
 let p = new parser()
-p.parse('5 + (3 + 2)')
+p.parse('f(x,y)=50x+(2*y)')
