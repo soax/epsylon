@@ -1,3 +1,4 @@
+import {parser} from './parser'
 
     class expression {
 
@@ -27,25 +28,6 @@
     }
     
 
-    class parser {
-
-        current: number
-
-        constructor(expr: String) {
-
-        }
-
-        parse() : tree {
-            let t = new tree();
-
-            return t;
-
-        }
-
-
-    }
-
-
     export class scope {
 
         definition = []
@@ -54,10 +36,10 @@
             
         }
 
-        eval(expr: String) {
-            let p = new parser(expr)
+        eval(expr: string) {
+            let p = new parser()
 
-            return p.parse().compile(this).eval()
+            return p.parse(expr).build()
         }
 
 
@@ -66,13 +48,13 @@
             return expr.eval() 
         }
 
-        compile(expr: String) : expression{
-            let p = new parser(expr)
+        compile(expr: string){
+            let p = new parser()
 
-            return p.parse().compile(this)
+            return p.parse(expr).build()
         }
 
-        _compile(tree: tree) : expression{
+        _compile(tree: tree){
             let e = new expression()
 
             return e

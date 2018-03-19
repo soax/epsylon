@@ -1,87 +1,88 @@
+import {tokenTree} from './tokenTree'
+
 const _space = {
-    ' '  : true,
-    '\t' : true,
+    ' ': true,
+    '\t': true,
 }
 function is_space(c: string) {
     return _space[c] || false
 }
 
 const _separator = {
-    ',' : true
+    ',': true
 }
-function is_separator (c: string) {
-    return _separator[c] || false
+function is_separator(c: string) {
+    return _separator[c] || false
 }
 
-const _flag = {
-    '$' : true,
-    '#' : true
+const _symbol_flag = {
+    '#': true,
 }
-function is_flag (c: string) {
-    return _flag[c] || false
+function is_symbol_flag(c: string) {
+    return _symbol_flag[c] || false
 }
 
 const _operator = {
-    '+' : true,
-    '-' : true,
-    '*' : true,
-    '/' : true,
-    '^' : true,
-    '=' : true,
-    ':' : true,
+    '+': true,
+    '-': true,
+    '*': true,
+    '/': true,
+    '^': true,
+    '=': true,
+    ':': true,
 }
-function is_operator (c: string) {
-    return _operator[c] || false
+function is_operator(c: string) {
+    return _operator[c] || false
 }
 
 let _function = {
-    'cos' : true,
-    'sin' : true,
-    'deriv' : true,
-    'solve' : true,
-    'sum' : true,
-    'avg' : true
+    'cos': true,
+    'sin': true,
+    'deriv': true,
+    'solve': true,
+    'sum': true,
+    'avg': true
 }
-function is_function (c: string) {
-    return _function[c] || false
+function is_function(c: string) {
+    return _function[c] || false
 }
 
-function is_number (c: string) {
+function is_number(c: string) {
     return (c >= '0' && c <= '9') || c === '-'
 }
 
-function is_symbol (c: string) {
+function is_symbol(c: string) {
     return (c >= 'a' && c <= 'z')
 }
 
 const _block = {
-    '(' : true,
-    '[' : true,
-    '{' : true,
+    '(': true,
+    '[': true,
+    '{': true,
 }
-function is_block (c) {
-    return _block[c] || false
+function is_block(c) {
+    return _block[c] || false
 }
 
 const _tex = {
-    '"' : true
+    '"': true
 }
-function is_tex (c) {
-    return _tex[c] || false 
+function is_tex(c) {
+    return _tex[c] || false
 }
 
 const _tex_symbol_token = {
-    '$' : true,
+    '$': true,
 }
-function is_tex_symbol_token (c) {
-    return _tex_symbol_token[c] || false 
+function is_tex_symbol_token(c) {
+    return _tex_symbol_token[c] || false
 }
 
 const _closing = {
-    '(' : ')',
-    '[' : ']',
-    '{' : '}',
-    '"' : '"'
+    '(': ')',
+    '[': ']',
+    '{': '}',
+    '"': '"'
 }
 
 
@@ -90,15 +91,14 @@ export class parser {
 
     ptr: number = 0
     expr: string
-    token  = []
+    token_tree = []
 
-    constructor () {
-       
+    constructor() {
+
     }
 
-    read_partial() {
+    read_token() {
         let c = this.expr[this.ptr]
-        console.log(this.ptr)
 
         // Clear spaces
         while (is_space(c)) {
@@ -111,6 +111,11 @@ export class parser {
 
         if (is_operator(c)) {
             return this.read_operator()
+        }
+
+        if (is_symbol_flag(c)) {
+            this.ptr++
+            return this.read_symbol(true)
         }
 
         if (is_symbol(c)) {
@@ -128,37 +133,39 @@ export class parser {
         if (is_tex(c)) {
             return this.read_tex()
         }
+
+        throw ('Syntax error at ' + this.ptr + ' : Character ' + c + ' not expected here')
     }
 
 
-    read_number () {
+    read_number() {
         let start = this.ptr++
-        let str : string = ''
+        let str: string = ''
         let point: boolean = false
 
         let c: string = this.expr[start]
         str += c
 
         c = this.expr[this.ptr]
-        while ( (c >= '0' && c <= '9') || (c === '.')) {
+        while ((c >= '0' && c <= '9') || (c === '.')) {
             if (c === '.' && point) {
-                throw ('Syntax error at ' + this.ptr + ' : Two many "."' )
+                throw ('Syntax error at ' + this.ptr + ' : Two many "."')
             }
-            if (c === '.') point = true 
+            if (c === '.') point = true
 
-            str +=c
+            str += c
             c = this.expr[++(this.ptr)]
         }
 
         return {
-            type : 'NUMBER',
+            type: 'NUMBER',
             start: start,
             length: this.ptr - start,
             value: Number(str)
         }
     }
 
-    read_operator () {
+    read_operator() {
         let start = this.ptr++
         let str: string = ''
 
@@ -166,15 +173,14 @@ export class parser {
         str += c
 
         return {
-            type : 'OPERATOR',
+            type: 'OPERATOR',
             start: start,
             length: this.ptr - start,
-            value: c  
+            value: c
         }
     }
 
-
-    read_symbol () {
+    read_symbol(cst_flag: boolean = false) {
         let start = this.ptr++
         let str: string = ''
 
@@ -182,20 +188,25 @@ export class parser {
         str += c
 
         c = this.expr[this.ptr]
-        while ( (c >= 'a' && c <= 'z')) {
-            str +=c
+        while ((c >= 'a' && c <= 'z') || (c === '.')) {
+            str += c
             c = this.expr[++(this.ptr)]
         }
 
+        if (str[str.length - 1] === '.') {
+            throw ('Syntax error at ' + this.ptr + ' :  Symbol name can not end with a point \'.\'')
+        }
+
         return {
-            type : 'SYMBOL',
+            type: 'SYMBOL',
             start: start,
             length: this.ptr - start,
-            value: str
+            value: str,
+            const: cst_flag
         }
     }
 
-    read_separator () {
+    read_separator() {
         let start = this.ptr++
         let str: string = ''
 
@@ -203,16 +214,16 @@ export class parser {
         str += c
 
         return {
-            type : 'SEPARATOR',
+            type: 'SEPARATOR',
             start: start,
             length: this.ptr - start,
             value: str
         }
     }
 
-    read_block () {
+    read_block() {
 
-        let partial = []
+        let token_branch = []
         let start = this.ptr++
 
         let open = this.expr[start]
@@ -222,7 +233,7 @@ export class parser {
             if (this.ptr >= this.expr.length) {
                 throw ('Syntax error at ' + start + ' : ' + open + 'block must be closed by a ' + close)
             }
-            partial.push(this.read_partial())
+            token_branch.push(this.read_token())
         }
         this.ptr++
 
@@ -231,37 +242,89 @@ export class parser {
             start: start,
             length: this.ptr - start,
             value: open,
-            content: partial
+            content: token_branch
         }
     }
 
-    read_tex () {
+    read_tex() {
         let start = this.ptr++
+        let content = []
+
+        let code = ''
+        let c_start = start + 1
 
         let open = this.expr[start]
         let close = _closing[open]
-    }
-   
-    parse (expr: string) {
 
-        this.expr = expr
-        this.ptr = 0
-        
-        let partial = []
-        let p
+        let c = this.expr[this.ptr]
+
+        while (c != close) {
+            if (this.ptr >= this.expr.length) {
+                throw ('Syntax error at ' + start + ' : ' + open + ' block must be closed by a ' + close)
+            }
+
+            if (is_symbol_flag(c)) {
+                if (code != '') {
+                    content.push({
+                        type: 'CODE',
+                        start: c_start,
+                        length: this.ptr - c_start,
+                        value: code,
+                    })
+                }
+                this.ptr++
+                content.push(this.read_symbol())
+                code = ''
+                c_start = this.ptr
+            } else {
+                code += c
+            }
+
+            c = this.expr[++(this.ptr)]
+        }
+
+        if (code != '') {
+            content.push({
+                type: 'CODE',
+                start: c_start,
+                length: this.ptr - c_start,
+                value: code,
+            })
+        }
+
+        this.ptr++
+
+        return {
+            type: 'LATEX',
+            start: start,
+            length: this.ptr - start,
+            content: content
+        }
+
+    }
+
+    tokenize_expression() {
+        let token_tree = new tokenTree()
 
         while (this.ptr < this.expr.length) {
             try {
-                partial.push(this.read_partial())   
+                token_tree.push(this.read_token())
             } catch (e) {
-                console.log("error", e)
-                console.log(JSON.stringify(partial, null, '\t'))
+                console.log(e)
                 return
             }
         }
 
-        console.log(JSON.stringify(partial, null, '\t'))
+        //console.log(JSON.stringify(token_tree, null, '\t'))
+        return token_tree
     }
 
+    parse(expr: string): tokenTree{
 
+        this.expr = expr
+        this.ptr = 0
+
+        return this.tokenize_expression()
+
+    }
 }

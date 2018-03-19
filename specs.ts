@@ -61,30 +61,18 @@ s.eval('h(1)')
 
 
 
-// eval an expression that contains a formal symbol (that can not be replaced by a value)
-s.eval('4*#a + 5*4')
-// -> returns '4a + 20'
-
-s.eval('deriv(a*x^2 + b*x, x')
-// -> returns 2x + 4
-
-s.eval('deriv(#a*x^2 + #b*x, x')
-// -> returns 'ax + b'
-
-
-
 
 //define a new expression that can be evaluated inside the scope s
 let e1 = s.compile('a + 3')
 
-e1.eval()
+//e1.eval()
 // -> returns '5'
 
-s.eval('a: 1')
+//s.eval('a: 1')
 // -> returns 'a: 1'
 // if the scope is updated then expression compiled inside the scope are also updated
 
-e1.eval()
+//e1.eval()
 // -> returns '4'
 
 
@@ -97,13 +85,13 @@ s.eval('f')
 s.eval('"f("a") = " f(a)')
 // -> return 'f(1) = 3'
 
-//a definition can be replaced by its value by using $. $a <=> s.eval(a)
-s.eval('"f($a) = " f(a)')
+//a definition can be replaced by its value by using #. #a <=> s.eval(a)
+s.eval('"f(#a) = " f(a)')
 // -> return 'f(1) = 3'
 
-let e2 = s.compile('"f($a) = " f(a)')
+let e2 = s.compile('"f(#a) = " f(a)')
 s.eval('a: 2')
-e2.eval()
+//e2.eval()
 // -> return 'f(2) = 6'
 
 
@@ -121,7 +109,7 @@ s.eval('sum(data)')
 s.eval('data[1] = 5')
 // -> return 'data : [5, 2, 3, 4, 5]'
 
-s.eval('"\sum_{i=1}^{$size(data)}data_i = " sum(data)')
+s.eval('"\\sum_{i=1}^{"size(data)"}data_i = " sum(data)')
 // -> return  '\sum_{i=1}^{5}d_i = 19'
 
 
@@ -135,7 +123,7 @@ s.eval('avg(d.x)')
 // -> return '2.33'
 
 // weighted average
-s.eval('"\mu_x = " avg(d.x, d.f)')
+s.eval('"\\mu_x = " avg(d.x, d.f)')
 // return '1.75'
 
 // or not named (like a matrix or vector collection)
@@ -161,3 +149,11 @@ s.eval('5 > 3')
 s.eval('solve(x + 2 = 4, x)')
 // -> return 'x: 2'
 
+
+
+s.eval('f(x): x + 1')
+s.eval('g(x): 2x')
+s.eval('"f(g(2)) = " f(g(2))')
+// -> return 'f(g(2)) = 5'
+s.eval('"f("g(2)")= " f(g(2))')
+// -> return 'f(4) = 5'
