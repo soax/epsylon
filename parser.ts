@@ -1,90 +1,6 @@
 import {tokenTree} from './tokenTree'
 
-const _space = {
-    ' ': true,
-    '\t': true,
-}
-function is_space(c: string) {
-    return _space[c] || false
-}
-
-const _separator = {
-    ',': true
-}
-function is_separator(c: string) {
-    return _separator[c] || false
-}
-
-const _symbol_flag = {
-    '#': true,
-}
-function is_symbol_flag(c: string) {
-    return _symbol_flag[c] || false
-}
-
-const _operator = {
-    '+': true,
-    '-': true,
-    '*': true,
-    '/': true,
-    '^': true,
-    '=': true,
-    ':': true,
-}
-function is_operator(c: string) {
-    return _operator[c] || false
-}
-
-let _function = {
-    'cos': true,
-    'sin': true,
-    'deriv': true,
-    'solve': true,
-    'sum': true,
-    'avg': true
-}
-function is_function(c: string) {
-    return _function[c] || false
-}
-
-function is_number(c: string) {
-    return (c >= '0' && c <= '9') || c === '-'
-}
-
-function is_symbol(c: string) {
-    return (c >= 'a' && c <= 'z')
-}
-
-const _block = {
-    '(': true,
-    '[': true,
-    '{': true,
-}
-function is_block(c) {
-    return _block[c] || false
-}
-
-const _tex = {
-    '"': true
-}
-function is_tex(c) {
-    return _tex[c] || false
-}
-
-const _tex_symbol_token = {
-    '$': true,
-}
-function is_tex_symbol_token(c) {
-    return _tex_symbol_token[c] || false
-}
-
-const _closing = {
-    '(': ')',
-    '[': ']',
-    '{': '}',
-    '"': '"'
-}
-
+import {utils as _} from './utils'
 
 
 export class parser {
@@ -101,36 +17,39 @@ export class parser {
         let c = this.expr[this.ptr]
 
         // Clear spaces
-        while (is_space(c)) {
-            c = this.expr[++(this.ptr)]
+        while (_.is_space(c)) {
+            if (++(this.ptr) >= this.expr.length) {
+                return null
+            }
+            c = this.expr[this.ptr]
         }
 
-        if (is_number(c)) {
+        if (_.is_number(c)) {
             return this.read_number()
         }
 
-        if (is_operator(c)) {
+        if (_.is_operator(c)) {
             return this.read_operator()
         }
 
-        if (is_symbol_flag(c)) {
+        if (_.is_symbol_flag(c)) {
             this.ptr++
             return this.read_symbol(true)
         }
 
-        if (is_symbol(c)) {
+        if (_.is_symbol(c)) {
             return this.read_symbol()
         }
 
-        if (is_separator(c)) {
+        if (_.is_separator(c)) {
             return this.read_separator()
         }
 
-        if (is_block(c)) {
+        if (_.is_block(c)) {
             return this.read_block()
         }
 
-        if (is_tex(c)) {
+        if (_.is_tex(c)) {
             return this.read_tex()
         }
 
@@ -158,7 +77,7 @@ export class parser {
         }
 
         return {
-            type: 'NUMBER',
+            type: _.token.NUMBER,
             start: start,
             length: this.ptr - start,
             value: Number(str)
@@ -173,10 +92,10 @@ export class parser {
         str += c
 
         return {
-            type: 'OPERATOR',
+            type: _.token.OPERATOR,
             start: start,
             length: this.ptr - start,
-            value: c
+            value: _.to_operator(c)
         }
     }
 
@@ -198,7 +117,7 @@ export class parser {
         }
 
         return {
-            type: 'SYMBOL',
+            type: _.token.SYMBOL,
             start: start,
             length: this.ptr - start,
             value: str,
@@ -208,16 +127,13 @@ export class parser {
 
     read_separator() {
         let start = this.ptr++
-        let str: string = ''
-
         let c: string = this.expr[start]
-        str += c
 
         return {
-            type: 'SEPARATOR',
+            type: _.token.SEPARATOR,
             start: start,
             length: this.ptr - start,
-            value: str
+            value: c
         }
     }
 
@@ -227,7 +143,7 @@ export class parser {
         let start = this.ptr++
 
         let open = this.expr[start]
-        let close = _closing[open]
+        let close = _.to_close[open]
 
         while (this.expr[this.ptr] != close) {
             if (this.ptr >= this.expr.length) {
@@ -238,7 +154,7 @@ export class parser {
         this.ptr++
 
         return {
-            type: 'BLOCK',
+            type: _.token.BLOCK,
             start: start,
             length: this.ptr - start,
             value: open,
@@ -250,11 +166,11 @@ export class parser {
         let start = this.ptr++
         let content = []
 
-        let code = ''
-        let c_start = start + 1
+        let str = ''
+        let s_start = start + 1
 
         let open = this.expr[start]
-        let close = _closing[open]
+        let close = _.to_close(open)
 
         let c = this.expr[this.ptr]
 
@@ -263,39 +179,39 @@ export class parser {
                 throw ('Syntax error at ' + start + ' : ' + open + ' block must be closed by a ' + close)
             }
 
-            if (is_symbol_flag(c)) {
-                if (code != '') {
+            if (_.is_symbol_flag(c)) {
+                if (str != '') {
                     content.push({
-                        type: 'CODE',
-                        start: c_start,
-                        length: this.ptr - c_start,
-                        value: code,
+                        type: _.token.STRING,
+                        start: s_start,
+                        length: this.ptr - s_start,
+                        value: str,
                     })
                 }
                 this.ptr++
                 content.push(this.read_symbol())
-                code = ''
-                c_start = this.ptr
+                str = ''
+                s_start = this.ptr
             } else {
-                code += c
+                str += c
             }
 
             c = this.expr[++(this.ptr)]
         }
 
-        if (code != '') {
+        if (str != '') {
             content.push({
-                type: 'CODE',
-                start: c_start,
-                length: this.ptr - c_start,
-                value: code,
+                type: _.token.STRING,
+                start: s_start,
+                length: this.ptr - s_start,
+                value: str,
             })
         }
 
         this.ptr++
 
         return {
-            type: 'LATEX',
+            type: _.token.LATEX,
             start: start,
             length: this.ptr - start,
             content: content
@@ -305,17 +221,45 @@ export class parser {
 
     tokenize_expression() {
         let token_tree = new tokenTree()
+        let previous_token_type = null
 
         while (this.ptr < this.expr.length) {
             try {
-                token_tree.push(this.read_token())
+                let token = this.read_token()
+                if (token) {
+                    if (previous_token_type === _.token.LATEX) {
+                        token_tree.push({
+                            type: _.token.OPERATOR,
+                            start: -1,
+                            length: -1,
+                            value: _.operator.CONCAT                        })
+                    }
+                    if (token.type === _.token.LATEX && previous_token_type) {
+                        token_tree.push({
+                            type: _.token.OPERATOR,
+                            start: -1,
+                            length: -1,
+                            value: _.operator.CONCAT
+                        })
+                    }
+                    if (previous_token_type === _.token.NUMBER && token.type === _.token.SYMBOL) {
+                        token_tree.push({
+                            type: _.token.OPERATOR,
+                            start: -1,
+                            length: -1,
+                            value: _.operator.TIMES
+                        })
+                    }
+                    previous_token_type = token.type
+                    token_tree.push(token)
+                }    
             } catch (e) {
                 console.log(e)
                 return
             }
         }
 
-        //console.log(JSON.stringify(token_tree, null, '\t'))
+        console.log(JSON.stringify(token_tree, null, '\t'))
         return token_tree
     }
 
