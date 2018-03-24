@@ -1,64 +1,41 @@
-import {parser} from './parser'
+import { parser } from './parser'
+import { tree } from './tree'
+import { expression } from './expression'
 
-    class expression {
 
-        scope: scope
-        tree: tree
+export class scope {
 
-        eval () {
+    symbol = []
 
-        }
-    }
-
-   // string -> tree -> expr
-   
-   
-   
-   
-    class tree {
-
-        compile(scope: scope) : expression{
-            return scope._compile(this);
-        }
+    constructor() {
 
     }
 
-    class tokenlist {
-
+    eval(expr: string) {
+        let e = this.compile(expr)
+        return e.eval()
     }
-    
-
-    export class scope {
-
-        definition = []
-        
-        constructor() {
-            
-        }
-
-        eval(expr: string) {
-            let p = new parser()
-
-            return p.parse(expr).build()
-        }
 
 
-        _eval(expr: expression) {
+    compile(expr: string) : expression{
+        let p = new parser()
+        let tree = p.parse(expr)
 
-            return expr.eval() 
-        }
-
-        compile(expr: string){
-            let p = new parser()
-
-            return p.parse(expr).build()
-        }
-
-        _compile(tree: tree){
-            let e = new expression()
-
-            return e
-        }
-
-        
+        let e = new expression(this, tree)
+        return e
     }
+
+    destroy(e: expression) {
+        e.destroy()
+    }
+
+    define(name, e: expression){
+        if (this.symbol[name]) {
+            this.destroy(this.symbol[name])    
+        }
+        this.symbol[name] = e
+    }
+
+
+
+}

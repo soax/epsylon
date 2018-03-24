@@ -111,4 +111,17 @@ export namespace utils {
         LATEX,
         STRING
     }
+
+
+    export function jstr(obj) {
+        return JSON.stringify(obj, null, 2)
+    }
+
+    export let log = console.log
+
+    export function jlog(obj) {
+        log(jstr(obj))
+    }
+
+    
 }

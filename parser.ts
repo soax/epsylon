@@ -1,6 +1,6 @@
-import {tokenTree} from './tokenTree'
+import { tree } from './tree'
 
-import {utils as _} from './utils'
+import { utils as _ } from './utils'
 
 
 export class parser {
@@ -121,7 +121,7 @@ export class parser {
             start: start,
             length: this.ptr - start,
             value: str,
-            const: cst_flag
+            is_const: cst_flag
         }
     }
 
@@ -139,17 +139,17 @@ export class parser {
 
     read_block() {
 
-        let token_branch = []
+        let token_list = []
         let start = this.ptr++
 
         let open = this.expr[start]
-        let close = _.to_close[open]
+        let close = _.to_close(open)
 
         while (this.expr[this.ptr] != close) {
             if (this.ptr >= this.expr.length) {
                 throw ('Syntax error at ' + start + ' : ' + open + 'block must be closed by a ' + close)
             }
-            token_branch.push(this.read_token())
+            token_list.push(this.read_token())
         }
         this.ptr++
 
@@ -158,7 +158,7 @@ export class parser {
             start: start,
             length: this.ptr - start,
             value: open,
-            content: token_branch
+            content: token_list
         }
     }
 
@@ -219,8 +219,8 @@ export class parser {
 
     }
 
-    tokenize_expression() {
-        let token_tree = new tokenTree()
+    tokenize() {
+        let token_list = []
         let previous_token_type = null
 
         while (this.ptr < this.expr.length) {
@@ -228,14 +228,15 @@ export class parser {
                 let token = this.read_token()
                 if (token) {
                     if (previous_token_type === _.token.LATEX) {
-                        token_tree.push({
+                        token_list.push({
                             type: _.token.OPERATOR,
                             start: -1,
                             length: -1,
-                            value: _.operator.CONCAT                        })
+                            value: _.operator.CONCAT
+                        })
                     }
                     if (token.type === _.token.LATEX && previous_token_type) {
-                        token_tree.push({
+                        token_list.push({
                             type: _.token.OPERATOR,
                             start: -1,
                             length: -1,
@@ -243,7 +244,7 @@ export class parser {
                         })
                     }
                     if (previous_token_type === _.token.NUMBER && token.type === _.token.SYMBOL) {
-                        token_tree.push({
+                        token_list.push({
                             type: _.token.OPERATOR,
                             start: -1,
                             length: -1,
@@ -251,24 +252,223 @@ export class parser {
                         })
                     }
                     previous_token_type = token.type
-                    token_tree.push(token)
-                }    
+                    token_list.push(token)
+                }
             } catch (e) {
                 console.log(e)
                 return
             }
         }
 
-        console.log(JSON.stringify(token_tree, null, '\t'))
-        return token_tree
+        _.jlog(token_list)
+        return token_list
     }
 
-    parse(expr: string): tokenTree{
+    build_operator(branch) {
+
+        //Look for the root operator
+        let root_index = -1
+        let root_operator = 100
+        for (let i = 0; i < branch.length; i++) {
+            if (branch[i].type === _.token.OPERATOR && branch[i].value < root_operator) {
+                root_operator = branch[i].value
+                root_index = i
+            }
+        }
+
+        if (root_index === 0)
+            throw ('Syntax error at ' + branch[root_index].start + ' : (sub)expression can not start by an operator')
+
+        //if there is an operator in the branch => split in two subranches
+        if (root_index > 0) {
+            let left_hand
+            if (branch[root_index].value === _.operator.ASSIGN) {
+                left_hand = this.build_definition(branch.slice(0, root_index))
+            } else {
+                left_hand = this.build_operator(branch.slice(0, root_index))
+            }
+            let right_hand = this.build_operator(branch.slice(root_index + 1))
+
+
+            return {
+                type: 'OPERATOR',
+                value: branch[root_index].value,
+                left_hand: left_hand,
+                right_hand: right_hand
+            }
+        }
+
+        //otherwise
+        let first = branch[0]
+        let size = branch.length
+
+        if (first.type === _.token.NUMBER) {
+            if (size === 1) {
+                return {
+                    type: 'NUMBER',
+                    value: first.value
+                }
+            }
+            throw ('Syntax error after ' + first.start + ' : NUMBER can not be followed by ' + branch[1].type)
+        } else
+            if (first.type === _.token.SYMBOL) {
+                if (size === 1) {
+                    return {
+                        type: 'SYMBOL',
+                        name: first.value
+                    }
+                }
+                if (size === 2) {
+                    let second = branch[1]
+                    if (second.type === _.token.BLOCK) {
+                        // it's a function
+                        if (second.value === '(') {
+                            let params = this.build_call_params(second.content)
+                            return {
+                                type: 'SYMBOL',
+                                name: first.value,
+                                is_function: true,
+                                params: params
+                            }
+                        }
+                        // it's an array
+                        if (second.value === '[') {
+                            // TODO: handle the array case
+                        }
+                        throw ('Syntax error after ' + first.start + ' : SYMBOL can not be followed by a ' + second.value + 'block')
+                    }
+                    throw ('Syntax error after ' + first.start)
+                }
+
+                throw ('Syntax error at ' + branch[2].start + ' : unexpected token here (Symbol should be followed by one or two token, no more)')
+            }
+        if (first.type === _.token.BLOCK) {
+            if (first.value === '(') {
+                return this.build_operator(first.content)
+            }
+            if (first.value === '[') {
+                throw ('Syntax error at ' + first.start + ' : \'[\' is not expected here')
+            }
+        }
+
+        throw ('Syntax error at ' + first.start + '')
+    }
+
+
+    build_call_params(branch) {
+        let params = []
+        let first = []
+
+        for (let i = 0; i < branch.length; i++) {
+            if (branch[i].type != _.token.SEPARATOR) {
+                first.push(branch[i])
+            } else {
+                if (first.length === 0) {
+                    throw ('Syntax error at ' + branch[i].start + ' : missing parameter or two many \',\' .')
+                }
+                params.push(this.build_operator(first))
+                first = []
+            }
+        }
+
+        if (first.length === 0) {
+            throw ('Syntax error at ' + branch[branch.lenght - 1].start + ' : missing parameter or two many \',\' .')
+        }
+        params.push(this.build_operator(first))
+
+        return params
+    }
+
+    build_def_params(branch) {
+        let params = []
+        let waiting_for = _.token.SYMBOL
+
+        let i = 0
+
+        _.jlog(branch)
+
+        while (i < branch.length) {
+            if (branch[i].type === _.token.SYMBOL) {
+                params.push({
+                    type: 'SYMBOL',
+                    name: branch[i].value
+                })
+                i++
+                if (i < branch.length && branch[i].type !== _.token.SEPARATOR) {
+                    throw ('Syntax error at ' + branch[i].start + ' : \',\' expected')
+                }
+            } else {
+                throw ('Syntax error at ' + branch[i].start + ' : SYMBOL expected')
+            }
+            i++
+        }
+        return params
+    }
+
+    build_definition(branch)  {
+        let first = branch[0]
+        let size = branch.length
+
+        //variable case
+        if (size === 1) {
+            return {
+                type: 'SYMBOL',
+                name: first.name,
+                is_const: first.is_const
+            }
+        }
+
+        if (size === 2) {
+            let second = branch[1]
+
+            if (second.type !== _.token.BLOCK) {
+                throw ('Syntax error at ' + second.start)
+            }
+
+            // function case
+            if (second.value === '(') {
+                let params = this.build_def_params(second.content)
+
+                return {
+                    type: 'SYMBOL',
+                    name: first.name,
+                    is_function: true,
+                    is_const: first.is_const,
+                    params: params
+                }
+            }
+            // array case
+            if (second.value === '[') {
+                // TODO: handle the array case 
+            }
+
+        }
+
+        throw ('Syntax error after ' + first.start + ' : No operator allowed on left hand of assignment')
+    }
+
+
+
+    build_tree(token_list): tree {
+
+        let t = new tree()
+
+        t.push(this.build_operator(token_list))
+
+        //_.jlog(t)
+
+        return t
+
+    }
+
+    parse(expr: string): tree {
 
         this.expr = expr
         this.ptr = 0
 
-        return this.tokenize_expression()
+        let token_list = this.tokenize()
+        let tree = this.build_tree(token_list)
 
+        return tree
     }
 }
