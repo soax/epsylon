@@ -17,11 +17,15 @@ export class parser {
         let c = this.expr[this.ptr]
 
         // Clear spaces
-        while (_.is_space(c)) {
-            if (++(this.ptr) >= this.expr.length) {
-                return null
-            }
-            c = this.expr[this.ptr]
+        // while (_.is_space(c)) {
+        //     if (++(this.ptr) >= this.expr.length) {
+        //         return null
+        //     }
+        //     c = this.expr[this.ptr]
+        // }
+        if (_.is_space(c)) {
+            this.ptr++
+            return null;
         }
 
         if (_.is_number(c)) {
@@ -120,7 +124,7 @@ export class parser {
             type: _.token.SYMBOL,
             start: start,
             length: this.ptr - start,
-            value: str,
+            name: str,
             is_const: cst_flag
         }
     }
@@ -145,11 +149,26 @@ export class parser {
         let open = this.expr[start]
         let close = _.to_close(open)
 
+        let previous_token_type = null
+
         while (this.expr[this.ptr] != close) {
             if (this.ptr >= this.expr.length) {
                 throw ('Syntax error at ' + start + ' : ' + open + 'block must be closed by a ' + close)
             }
-            token_list.push(this.read_token())
+            let token = this.read_token()
+            if (token) {
+                if (previous_token_type === _.token.NUMBER && token.type === _.token.SYMBOL) {
+                    token_list.push({
+                        type: _.token.OPERATOR,
+                        start: -1,
+                        length: -1,
+                        value: _.operator.TIMES
+                    })
+                }
+            
+                token_list.push(token)
+                previous_token_type = token.type
+            }
         }
         this.ptr++
 
@@ -255,12 +274,12 @@ export class parser {
                     token_list.push(token)
                 }
             } catch (e) {
-                console.log(e)
+                // _.log(e)
                 return
             }
         }
 
-        _.jlog(token_list)
+        // _.jlog(token_list)
         return token_list
     }
 
@@ -291,7 +310,7 @@ export class parser {
 
 
             return {
-                type: 'OPERATOR',
+                type: _.token.OPERATOR,
                 value: branch[root_index].value,
                 left_hand: left_hand,
                 right_hand: right_hand
@@ -305,7 +324,7 @@ export class parser {
         if (first.type === _.token.NUMBER) {
             if (size === 1) {
                 return {
-                    type: 'NUMBER',
+                    type: _.token.NUMBER,
                     value: first.value
                 }
             }
@@ -314,8 +333,8 @@ export class parser {
             if (first.type === _.token.SYMBOL) {
                 if (size === 1) {
                     return {
-                        type: 'SYMBOL',
-                        name: first.value
+                        type: _.token.SYMBOL,
+                        name: first.name
                     }
                 }
                 if (size === 2) {
@@ -325,8 +344,8 @@ export class parser {
                         if (second.value === '(') {
                             let params = this.build_call_params(second.content)
                             return {
-                                type: 'SYMBOL',
-                                name: first.value,
+                                type: _.token.SYMBOL,
+                                name: first.name,
                                 is_function: true,
                                 params: params
                             }
@@ -385,12 +404,12 @@ export class parser {
 
         let i = 0
 
-        _.jlog(branch)
+        // _.jlog(branch)
 
         while (i < branch.length) {
             if (branch[i].type === _.token.SYMBOL) {
                 params.push({
-                    type: 'SYMBOL',
+                    type: _.token.SYMBOL,
                     name: branch[i].value
                 })
                 i++
@@ -430,7 +449,7 @@ export class parser {
                 let params = this.build_def_params(second.content)
 
                 return {
-                    type: 'SYMBOL',
+                    type: _.token.SYMBOL,
                     name: first.name,
                     is_function: true,
                     is_const: first.is_const,

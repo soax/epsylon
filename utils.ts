@@ -53,6 +53,12 @@ export namespace utils {
         '{': true,
     }
 
+    const _is_block_close = {
+        ')': true,
+        ']': true,
+        '}': true,
+    }
+
     const _open_close = {
         '(': ')',
         '[': ']',

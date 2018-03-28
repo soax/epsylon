@@ -7,11 +7,34 @@ let p = new parser()
 
 let s = new scope()
 
-s.symbol['a'] = {eval: () => {return 5}}
-s.symbol['b'] = {eval: () => {return 10}}
+s.eval('a: 5')
+ _.log(s.eval('c: 5 + a'))
 
-s.eval('c: 5')
-s.eval('d: a + b')
+ _.log(s.eval('c + 2'))
+ 
+ s.eval('a: 10')
+ 
+ _.log(s.eval('c + 2 + a'))
 
-s.eval('c')
-s.eval('d')
+ s.eval('c: 2a')
+
+ console.dir(s.symbol)
+
+// s.eval('d: a + b')
+
+// s.eval('c')
+// s.eval('d')
+
+// let e = s.compile('( 10 + 2a ) / 5') 
+
+// _.log('e : ', e.value)
+
+// s.symbol['a'] = {value: 10}
+
+// _.log('e : ', e.value)
+
+// s.update_dependency_of('a')
+
+// _.log('e : ', e.value)
+
+
