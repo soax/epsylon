@@ -118,6 +118,14 @@ export namespace utils {
         STRING
     }
 
+    export function run_predef_math_function(f, par) {
+        let _par = []
+        par.forEach(p => {
+            _par.push(p())
+        })
+        return f.call(null, _par)
+    }
+
 
     export function jstr(obj) {
         return JSON.stringify(obj, null, 2)

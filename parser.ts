@@ -279,7 +279,7 @@ export class parser {
             }
         }
 
-        // _.jlog(token_list)
+         //_.jlog(token_list)
         return token_list
     }
 
@@ -329,44 +329,64 @@ export class parser {
                 }
             }
             throw ('Syntax error after ' + first.start + ' : NUMBER can not be followed by ' + branch[1].type)
-        } else
-            if (first.type === _.token.SYMBOL) {
-                if (size === 1) {
-                    return {
-                        type: _.token.SYMBOL,
-                        name: first.name
-                    }
+        }
+        if (first.type === _.token.SYMBOL) {
+            if (size === 1) {
+                return {
+                    type: _.token.SYMBOL,
+                    name: first.name
                 }
-                if (size === 2) {
-                    let second = branch[1]
-                    if (second.type === _.token.BLOCK) {
-                        // it's a function
-                        if (second.value === '(') {
-                            let params = this.build_call_params(second.content)
-                            return {
-                                type: _.token.SYMBOL,
-                                name: first.name,
-                                is_function: true,
-                                params: params
-                            }
-                        }
-                        // it's an array
-                        if (second.value === '[') {
-                            // TODO: handle the array case
-                        }
-                        throw ('Syntax error after ' + first.start + ' : SYMBOL can not be followed by a ' + second.value + 'block')
-                    }
-                    throw ('Syntax error after ' + first.start)
-                }
-
-                throw ('Syntax error at ' + branch[2].start + ' : unexpected token here (Symbol should be followed by one or two token, no more)')
             }
+            if (size === 2) {
+                let second = branch[1]
+                if (second.type === _.token.BLOCK) {
+                    // it's a function
+                    if (second.value === '(') {
+                        let params = this.build_call_params(second.content)
+                        return {
+                            type: _.token.SYMBOL,
+                            name: first.name,
+                            is_function: true,
+                            params: params
+                        }
+                    }
+                    // it's an array
+                    if (second.value === '[') {
+                        // TODO: handle the array case
+                    }
+                    throw ('Syntax error after ' + first.start + ' : SYMBOL can not be followed by a ' + second.value + 'block')
+                }
+                throw ('Syntax error after ' + first.start)
+            }
+
+            throw ('Syntax error at ' + branch[2].start + ' : unexpected token here (Symbol should be followed by one or two token, no more)')
+        }
         if (first.type === _.token.BLOCK) {
             if (first.value === '(') {
                 return this.build_operator(first.content)
             }
             if (first.value === '[') {
                 throw ('Syntax error at ' + first.start + ' : \'[\' is not expected here')
+            }
+        }
+        if (first.type === _.token.LATEX) {
+            let content = []
+            first.content.forEach(c => {
+                if (c.type === _.token.STRING) {
+                    content.push({
+                        type: _.token.STRING,
+                        value: c.value
+                    })
+                } else if (c.type === _.token.SYMBOL) {
+                    content.push({
+                        type: _.token.SYMBOL,
+                        name: c.name
+                    })
+                }
+            })
+            return {
+                type: _.token.LATEX,
+                content: content
             }
         }
 
@@ -410,7 +430,7 @@ export class parser {
             if (branch[i].type === _.token.SYMBOL) {
                 params.push({
                     type: _.token.SYMBOL,
-                    name: branch[i].value
+                    name: branch[i].name
                 })
                 i++
                 if (i < branch.length && branch[i].type !== _.token.SEPARATOR) {

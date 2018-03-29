@@ -13,12 +13,10 @@ export class scope {
 
     }
 
-
     eval(expr: string) {
         let e = this.compile(expr)
-        return e.value;
+        return e
     }
-
 
     compile(expr: string) : expression{
         let p = new parser()
