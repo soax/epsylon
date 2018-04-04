@@ -5,20 +5,20 @@
   "main": "main.js",
   "scripts": {
     "start": "webpack-dev-server --progress --colors",
-    "build": "webpack --progress --colors >2 out.txt",
+    "build": "webpack --progress --colors",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/soax/maths.git"
+    "url": "git+https://github.com/soax/epsylon.git"
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "",
   "bugs": {
-    "url": "https://github.com/soax/maths/issues"
+    "url": "https://github.com/soax/epsylon/issues"
   },
-  "homepage": "https://github.com/soax/maths#readme",
+  "homepage": "https://github.com/soax/epsylon#readme",
   "devDependencies": {
     "ts-loader": "^4.1.0",
     "typescript": "^2.8.1",
