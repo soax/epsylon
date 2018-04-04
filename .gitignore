@@ -1,5 +1,4 @@
-dist/*.js
-dist/*.js.map
+dist
 *.log
 node_modules
 .vscode
