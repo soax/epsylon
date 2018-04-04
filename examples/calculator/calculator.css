@@ -1,0 +1,17 @@
+#view {
+    border: 1px solid black;
+    width: 100%;
+    min-height: 300px;
+    padding: 10px;
+}
+
+
+.expression {
+    float: left;
+    clear: both;
+}
+
+.result {
+    float: right;
+    clear: both;
+}

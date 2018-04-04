@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <link rel="stylesheet" type="text/css" href="calculator.css">
+
+    <script src="../../dist/maths.js"></script>
+    <script src="calculator.js"></script>
+
+    <script type="text/javascript">
+        window.MathJax = {
+          tex2jax: {
+            inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+            processEscapes: true
+          }
+        };
+    </script>
+    <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.3/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+
+    <title>Epsylon Calculator Demo</title>
+</head>
+
+<body>
+
+    <div style="width: 290px; margin: auto;">
+        <h3>Epsylon Calculator Demo</h3>
+        <div id="view"></div><br>
+        <input type="text" name="input" id="input">
+        <button onclick="_eval()">Eval</button>
+    </div>
+</body>
+
+</html>

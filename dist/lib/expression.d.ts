@@ -4,6 +4,8 @@ export declare class expression {
     private tree;
     private scope;
     value: any;
+    name: string;
+    is_assignment: boolean;
     constructor(scope: scope, tree: tree);
     compile(): void;
     _compile(root: any): any;

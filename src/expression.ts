@@ -9,6 +9,8 @@ export class expression {
     private scope: scope
 
     value
+    name: string
+    is_assignment: boolean = false
 
     constructor(scope: scope, tree: tree) {
         this.scope = scope
@@ -20,9 +22,10 @@ export class expression {
     compile() {
         let root = this.tree.root[0]
         if (root.type === _.token.OPERATOR && root.value === _.operator.ASSIGN) {
-            let name = root.left_hand.name
+            this.name = root.left_hand.name
+            this.is_assignment = true
             this.value = this.compile_symbol_def(root)
-            this.scope.define(name, this)
+            this.scope.define(this.name, this)
         } else {
             this.value = this._compile(this.tree.root[0])()
         }
