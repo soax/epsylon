@@ -4,6 +4,8 @@
   "description": "A dynamic maths library.",
   "main": "main.js",
   "scripts": {
+    "start": "webpack-dev-server --progress --colors",
+    "build": "webpack --progress --colors >2 out.txt",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {

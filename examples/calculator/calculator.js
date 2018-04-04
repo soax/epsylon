@@ -1,4 +1,4 @@
-var s = new maths.scope()
+var s = new epsylon.scope()
 
 function _eval() {
     var expr = document.getElementById("input").value
